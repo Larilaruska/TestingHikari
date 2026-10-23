@@ -1642,6 +1642,21 @@
   .cart-shipping-note { font-size: 13px; color: var(--muted); margin-bottom: 16px; }
 
   /* ────────────────────────────────────────────
+     DETAIL BACK BAR (hide-on-scroll-down)
+  ──────────────────────────────────────────── */
+  .detail-back-bar {
+    position: sticky;
+    top: 0;
+    z-index: 200;
+    transform: translateY(0);
+    transition: transform 0.25s ease;
+    will-change: transform;
+  }
+  .detail-back-bar.bar-hidden {
+    transform: translateY(-110%);
+  }
+
+  /* ────────────────────────────────────────────
      PRODUCT DETAIL
   ──────────────────────────────────────────── */
   .product-detail-hero {
@@ -2907,7 +2922,7 @@
      TEAM DETAIL PAGE
 ══════════════════════════════════════════ -->
 <div id="page-team-detail" class="page">
-  <div style="padding:12px max(16px, calc((100vw - 1140px) / 2 + 48px)); background:var(--white); border-bottom:1px solid var(--border); font-size:13px; color:var(--muted);">
+  <div class="detail-back-bar" style="padding:12px max(16px, calc((100vw - 1140px) / 2 + 48px)); background:var(--white); border-bottom:1px solid var(--border); font-size:13px; color:var(--muted);">
     <span onclick="showPage('teams')" style="cursor:pointer; color:var(--navy);">← All Teams</span>
   </div>
 
@@ -3348,7 +3363,7 @@
 
 <!-- EVENT DETAIL PAGE -->
 <div id="page-event-detail" class="page">
-  <div style="padding:14px max(16px, calc((100vw - 1140px) / 2 + 48px)); background:var(--white); border-bottom:1px solid var(--border); display:flex; align-items:center; justify-content:space-between;">
+  <div class="detail-back-bar" style="padding:14px max(16px, calc((100vw - 1140px) / 2 + 48px)); background:var(--white); border-bottom:1px solid var(--border); display:flex; align-items:center; justify-content:space-between;">
     <span style="font-size:13px; color:var(--navy); cursor:pointer; font-weight:500;" onclick="history.replaceState(null,'',location.pathname); showPage('events')">← Back to Events</span>
     <button id="ed-share-btn" onclick="copyEventLink()" style="display:flex; align-items:center; gap:6px; background:none; border:1px solid var(--border); border-radius:4px; padding:6px 12px; font-size:13px; font-weight:500; color:var(--navy); cursor:pointer;">
       <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>
@@ -3509,7 +3524,7 @@
      PRODUCT DETAIL PAGE
 ══════════════════════════════════════════ -->
 <div id="page-product-detail" class="page">
-  <div style="padding:20px max(16px, calc((100vw - 1140px) / 2 + 48px)); background:var(--white); border-bottom:1px solid var(--border);">
+  <div class="detail-back-bar" style="padding:12px max(16px, calc((100vw - 1140px) / 2 + 48px)); background:var(--white); border-bottom:1px solid var(--border);">
     <span style="font-size:13px; color:var(--navy); cursor:pointer; font-weight:500;" onclick="showPage('shop')">← Back to Shop</span>
   </div>
   <div class="product-detail-hero">
@@ -4121,6 +4136,10 @@
     if (el) {
       el.classList.add('active');
       window.scrollTo(0,0);
+      _lastScrollY = 0;
+      // Always show back bar when arriving at a detail page
+      const bar = el.querySelector('.detail-back-bar');
+      if (bar) bar.classList.remove('bar-hidden');
       _isHome = (id === 'home');
       if (_nav) {
         _nav.classList.remove('scrolled');
@@ -4166,6 +4185,9 @@
   let _isHome = true;
   const _tickerTrack = document.querySelector('.ticker-track');
   const _parallaxBg = document.querySelector('.parallax-bg');
+  // Hide-on-scroll-down back bar
+  let _lastScrollY = 0;
+  let _scrollTicking = false;
   window.addEventListener('scroll', () => {
     if (_isHome) _nav.classList.toggle('scrolled', window.scrollY > 60);
     if (_tickerTrack) {
@@ -4181,6 +4203,23 @@
         const shift = (progress - 0.5) * 320;
         _parallaxBg.style.transform = `translateY(${shift}px)`;
       }
+    }
+    // Smart back bar: hide when scrolling down, show when scrolling up
+    if (!_scrollTicking) {
+      requestAnimationFrame(() => {
+        const y = window.scrollY;
+        const bar = document.querySelector('.page:not([style*="display:none"]) .detail-back-bar, .page:not([style*="display: none"]) .detail-back-bar');
+        if (bar) {
+          if (y > _lastScrollY && y > 80) {
+            bar.classList.add('bar-hidden');
+          } else {
+            bar.classList.remove('bar-hidden');
+          }
+        }
+        _lastScrollY = y;
+        _scrollTicking = false;
+      });
+      _scrollTicking = true;
     }
   }, { passive: true });
 
